@@ -1,4 +1,5 @@
 #include "fcgi_stdio.h"
+#include "magic.h"
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <string.h>
@@ -6,10 +7,13 @@
 typedef struct ImageResource {
     char* payload;
     size_t size;
+    char* url;
+    char* mime_type;
 } ImageResource;
 
 ImageResource* get_image(char* url, ImageResource* image);
 static size_t write_callback(char *ptr, size_t size, size_t nmemb, ImageResource *image);
+void compute_mime_type(ImageResource *image);
 
 int main()
 {
@@ -20,7 +24,9 @@ int main()
 
         ImageResource *image = (ImageResource*) malloc(sizeof(ImageResource));
 
-        image->payload  = (char*) malloc(sizeof(char));
+        image->payload    = (char*) malloc(sizeof(char));
+        image->mime_type  = (char*) malloc(sizeof(char));
+        image->url        = (char*) malloc(sizeof(char));
         *image->payload = '\0';
         image->size = 0;
 
@@ -28,7 +34,7 @@ int main()
 
         printf("Content-Length: %d\r\n", (int) image->size);
         printf("X-Content: HOLA\r\n");
-        printf("Content-type: image/jpg\r\nStatus: 200 OK\r\n\r\n");
+        printf("Content-type: %s\r\nStatus: 200 OK\r\n\r\n", image->mime_type);
 
         fwrite(image->payload, image->size, 1, stdout);
     }
@@ -59,11 +65,11 @@ ImageResource* get_image(char* url, ImageResource *image)
 
     CURL* curl = curl_easy_init();
 
-    url = curl_easy_unescape(curl, url, 0, NULL);
+    image->url = curl_easy_unescape(curl, url, 0, NULL);
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, image);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_URL, image->url);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
     res = curl_easy_perform(curl);
@@ -74,5 +80,29 @@ ImageResource* get_image(char* url, ImageResource *image)
 
     curl_easy_cleanup(curl);
 
+    compute_mime_type(image);
+
     return image;
+}
+
+void compute_mime_type(ImageResource *image)
+{
+    magic_t magic_cookie;
+    magic_cookie = magic_open(MAGIC_MIME);
+
+    if (magic_cookie == NULL) {
+        image->mime_type = NULL;
+        magic_close(magic_cookie);
+        return;
+    }
+
+    if (magic_load(magic_cookie, NULL) != 0) {
+        magic_close(magic_cookie);
+        image->mime_type = NULL;
+        return;
+    }
+
+    image->mime_type = (char*) magic_buffer(magic_cookie, image->payload, image->size);
+
+    magic_close(magic_cookie);
 }

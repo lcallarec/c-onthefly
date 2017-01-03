@@ -2,8 +2,9 @@
 
 ## Pre-requisites
 
-* Install libfcgi-dev
-* sudo apt-get install spawn-fcgi
+* libfcgi-dev
+* libmagic-dev
+* spawn-fcgi
 
 ## Build
 ```bash
@@ -15,5 +16,5 @@ make
 
 ## Run
 ```bash
-spawn-fcgi  -a127.0.0.1 -p9000 -n
+spawn-fcgi -a127.0.0.1 -p9000 -n onthefly
 ```
