@@ -31,3 +31,18 @@
 # Debug files
 *.dSYM/
 *.su
+
+#CMake files
+/CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+##Project binary
+onthefly
+
+##IDE
+##Don't tell me "that kind of ignored folders should be setup in ypu global git config" :)
+.idea/*
+
+
