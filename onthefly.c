@@ -33,7 +33,7 @@ int main()
         image = get_image(url, image);
 
         printf("Content-Length: %d\r\n", (int) image->size);
-        printf("X-Content: HOLA\r\n");
+        printf("X-Via-Onthefly: true\r\n");
         printf("Content-type: %s\r\nStatus: 200 OK\r\n\r\n", image->mime_type);
 
         fwrite(image->payload, image->size, 1, stdout);
